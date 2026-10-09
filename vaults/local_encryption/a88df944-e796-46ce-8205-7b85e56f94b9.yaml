@@ -1,0 +1,7 @@
+id: a88df944-e796-46ce-8205-7b85e56f94b9
+name: trip-planner
+type: local_encryption
+config:
+  auto_generate: true
+  base_dir: /home/adam/src/swamp-trip-planner
+createdAt: '2026-10-09T05:04:13.393Z'

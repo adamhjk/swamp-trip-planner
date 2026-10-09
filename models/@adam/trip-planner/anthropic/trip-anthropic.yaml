@@ -1,0 +1,9 @@
+type: '@adam/trip-planner/anthropic'
+typeVersion: 2026.10.08.1
+id: 1f63c7b1-423d-464d-9206-dabbd58a4b4b
+name: trip-anthropic
+version: 1
+tags: {}
+globalArguments:
+  apiKey: '${{ vault.get(trip-planner, ANTHROPIC_API_KEY) }}'
+methods: {}

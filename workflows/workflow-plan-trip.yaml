@@ -1,0 +1,155 @@
+id: 2ec347d6-9bca-45d2-8f13-e5372a3e5262
+name: "@adam/plan-trip"
+description: >-
+  Plan a trip from a plain-English request: Claude Haiku extracts the
+  requirements, flights and hotels are searched in parallel, the itinerary
+  behavior picks the best-fit pair within budget, then renders a day-by-day
+  itinerary. Only extraction uses an LLM; pick and generate are
+  deterministic.
+tags:
+  service: travel
+inputs:
+  type: object
+  properties:
+    request:
+      type: string
+      description: >-
+        The trip request, e.g. "plan a comfortable trip to japan, 10 days in
+        april, $4000, from SFO"
+  required:
+    - request
+jobs:
+  - name: understand
+    description: Turn the request into structured requirements
+    steps:
+      - name: extract
+        description: Claude Haiku extracts origin, destination, dates, budget, priority
+        task:
+          type: model_method
+          modelIdOrName: trip-anthropic
+          methodName: extract
+          inputs:
+            request: ${{ inputs.request }}
+        dependsOn: []
+        weight: 0
+        allowFailure: false
+      - name: assert-complete
+        description: Stop early if the request left out something essential
+        task:
+          type: assert
+          expr: >-
+            data.latest("trip-anthropic", "requirements-latest").attributes.missing.size() == 0
+          message: >-
+            The request is missing: ${{ data.latest("trip-anthropic",
+            "requirements-latest").attributes.missing.join(", ") }}. Add it and
+            run again.
+          severity: high
+        dependsOn:
+          - step: extract
+            condition:
+              type: succeeded
+        weight: 0
+        allowFailure: false
+    dependsOn: []
+    weight: 0
+
+  - name: search
+    description: Search flights and hotels in parallel
+    dependsOn:
+      - job: understand
+        condition:
+          type: succeeded
+    steps:
+      - name: flights
+        description: Priced flight options for the route and dates
+        task:
+          type: model_method
+          modelIdOrName: trip-flights
+          methodName: search
+          inputs:
+            departureIds: ${{ data.latest("trip-anthropic", "requirements-latest").attributes.originAirports }}
+            arrivalIds: ${{ data.latest("trip-anthropic", "requirements-latest").attributes.destinationAirports }}
+            outboundDate: ${{ data.latest("trip-anthropic", "requirements-latest").attributes.startDate }}
+            returnDate: ${{ data.latest("trip-anthropic", "requirements-latest").attributes.endDate }}
+            adults: ${{ data.latest("trip-anthropic", "requirements-latest").attributes.travelers }}
+            cabin: ${{ data.latest("trip-anthropic", "requirements-latest").attributes.cabin }}
+        dependsOn: []
+        weight: 0
+        allowFailure: false
+      - name: hotels
+        description: Rated hotels in the destination city under the nightly cap
+        task:
+          type: model_method
+          modelIdOrName: trip-hotels
+          methodName: search_hotels
+          inputs:
+            city: ${{ data.latest("trip-anthropic", "requirements-latest").attributes.destinationCity }}
+            max_price_usd: ${{ data.latest("trip-anthropic", "requirements-latest").attributes.hotelNightlyCapUsd }}
+            sort: best
+        dependsOn: []
+        weight: 0
+        allowFailure: false
+    weight: 0
+
+  - name: plan
+    description: Pick the best-fit flight and hotel, then write the itinerary
+    dependsOn:
+      - job: search
+        condition:
+          type: succeeded
+    steps:
+      - name: pick
+        description: Best flight + hotel within budget, scored by priority
+        task:
+          type: model_method
+          modelIdOrName: trip-itinerary
+          methodName: pick
+          inputs:
+            flights: ${{ data.latest("trip-flights", "flights-latest").attributes.options }}
+            hotels: ${{ data.latest("trip-hotels", "search").attributes.hotels }}
+            budgetUsd: ${{ data.latest("trip-anthropic", "requirements-latest").attributes.budgetUsd }}
+            nights: ${{ data.latest("trip-anthropic", "requirements-latest").attributes.nights }}
+            travelers: ${{ data.latest("trip-anthropic", "requirements-latest").attributes.travelers }}
+            rooms: ${{ data.latest("trip-anthropic", "requirements-latest").attributes.rooms }}
+            priority: ${{ data.latest("trip-anthropic", "requirements-latest").attributes.priority }}
+            city: ${{ data.latest("trip-anthropic", "requirements-latest").attributes.destinationCity }}
+        dependsOn: []
+        weight: 0
+        allowFailure: false
+      - name: assert-within-budget
+        description: Double-check the pick fits the budget
+        task:
+          type: assert
+          expr: >-
+            data.latest("trip-itinerary", "selection-latest").attributes.costs.remainingUsd >= 0
+          message: The picked flight and hotel exceed the budget.
+          severity: high
+        dependsOn:
+          - step: pick
+            condition:
+              type: succeeded
+        weight: 0
+        allowFailure: false
+      - name: generate
+        description: Render the day-by-day itinerary from the pick (no LLM)
+        task:
+          type: model_method
+          modelIdOrName: trip-itinerary
+          methodName: generate
+          inputs:
+            destinationCity: ${{ data.latest("trip-anthropic", "requirements-latest").attributes.destinationCity }}
+            destinationCountry: ${{ data.latest("trip-anthropic", "requirements-latest").attributes.destinationCountry }}
+            startDate: ${{ data.latest("trip-anthropic", "requirements-latest").attributes.startDate }}
+            endDate: ${{ data.latest("trip-anthropic", "requirements-latest").attributes.endDate }}
+            travelers: ${{ data.latest("trip-anthropic", "requirements-latest").attributes.travelers }}
+            interests: ${{ data.latest("trip-anthropic", "requirements-latest").attributes.interests }}
+            assumptions: ${{ data.latest("trip-anthropic", "requirements-latest").attributes.assumptions }}
+            request: ${{ inputs.request }}
+        dependsOn:
+          - step: assert-within-budget
+            condition:
+              type: succeeded
+        weight: 0
+        allowFailure: false
+    weight: 0
+version: 1

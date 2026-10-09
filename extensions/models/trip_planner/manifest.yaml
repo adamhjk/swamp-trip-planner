@@ -1,0 +1,44 @@
+manifestVersion: 1
+name: "@adam/trip-planner"
+version: "2026.10.08.1"
+description: |
+  Plan a trip from one plain-English sentence. Claude Haiku extracts the
+  requirements, Google Flights (via SerpApi or SearchApi.io) and hotelist.com are searched in
+  parallel, a deterministic picker chooses the best-fit flight and hotel
+  within budget, and a day-by-day itinerary is rendered from it. Only the
+  extraction step uses an LLM; picking and rendering are deterministic.
+
+  ## Behaviors
+
+  | Behavior | Type | Methods |
+  | -------- | ---- | ------- |
+  | Anthropic | `@adam/trip-planner/anthropic` | `extract` — request → structured requirements (the only LLM call) |
+  | Hotel | `@keeb/hotelist` | `search_hotels` — rated hotels with nightly prices |
+  | Flight | `@adam/trip-planner/flights` | `search` — priced Google Flights options (SerpApi or SearchApi.io) |
+  | Itinerary | `@adam/trip-planner/itinerary` | `pick` — best fit within budget; `generate` — Markdown itinerary (both deterministic) |
+
+  ## Usage
+
+  ```bash
+  swamp workflow run @adam/plan-trip \
+    --input request="plan a comfortable trip to japan, 10 days in april, \$4000, from SFO"
+  ```
+paths:
+  base: manifest
+models:
+  - anthropic.ts
+  - flights.ts
+  - itinerary.ts
+workflows:
+  - workflow-plan-trip.yaml
+additionalFiles:
+  - README.md
+dependencies:
+  - "@keeb/hotelist"
+platforms: []
+labels:
+  - travel
+  - flights
+  - hotels
+  - anthropic
+  - claude

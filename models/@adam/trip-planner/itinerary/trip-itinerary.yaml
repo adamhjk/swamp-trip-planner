@@ -1,0 +1,8 @@
+type: '@adam/trip-planner/itinerary'
+typeVersion: 2026.10.08.1
+id: 4a43a8e7-b78e-426b-9599-b851987e3756
+name: trip-itinerary
+version: 1
+tags: {}
+globalArguments: {}
+methods: {}

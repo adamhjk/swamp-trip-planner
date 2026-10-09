@@ -1,0 +1,17 @@
+{
+  "@keeb/hotelist": {
+    "version": "2026.08.24.1",
+    "pulledAt": "2026-10-09T03:22:02.449Z",
+    "files": [
+      ".swamp/bundles/49ad73f9/hotelist.js",
+      ".swamp/pulled-extensions/@keeb/hotelist/files/LICENSE.txt",
+      ".swamp/pulled-extensions/@keeb/hotelist/files/README.md",
+      ".swamp/pulled-extensions/@keeb/hotelist/manifest.yaml",
+      ".swamp/pulled-extensions/@keeb/hotelist/models/hotelist.ts",
+      ".swamp/pulled-extensions/@keeb/hotelist/workflows/hotel-recommendation.yaml"
+    ],
+    "checksum": "9dfdf5d2ecaac9aee1f3af3e85b3597f1bf31617384207c0a473258887a23f23",
+    "filesChecksum": "c0a9b84f8434814fa7a9901c0c8d1a151a50be3d3f15181f46bab07113a71f1f",
+    "serverUrl": "https://swamp-club.com"
+  }
+}
