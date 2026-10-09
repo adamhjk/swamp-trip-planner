@@ -1,10 +1,10 @@
 manifestVersion: 1
 name: "@adam/trip-planner"
-version: "2026.10.08.1"
+version: "2026.10.09.1"
 description: |
   Plan a trip from one plain-English sentence. Claude Haiku extracts the
-  requirements, Google Flights (via SerpApi or SearchApi.io) and hotelist.com are searched in
-  parallel, a deterministic picker chooses the best-fit flight and hotel
+  requirements, Google Flights (via SearchApi.io or SerpApi) and
+  hotelist.com are searched in parallel, a deterministic picker chooses the best-fit flight and hotel
   within budget, and a day-by-day itinerary is rendered from it. Only the
   extraction step uses an LLM; picking and rendering are deterministic.
 
@@ -20,9 +20,17 @@ description: |
   ## Usage
 
   ```bash
+  swamp extension pull @adam/trip-planner
+  swamp vault create local_encryption trip-planner
+  swamp vault put trip-planner ANTHROPIC_API_KEY
+  swamp vault put trip-planner FLIGHTS_API_KEY   # SearchApi.io (default) or SerpApi
+
   swamp workflow run @adam/plan-trip \
     --input request="plan a comfortable trip to japan, 10 days in april, \$4000, from SFO"
   ```
+
+  The workflow creates its own models; there is nothing else to set up.
+repository: "https://github.com/adamhjk/swamp-trip-planner"
 paths:
   base: manifest
 models:
@@ -33,6 +41,7 @@ workflows:
   - workflow-plan-trip.yaml
 additionalFiles:
   - README.md
+  - LICENSE.txt
 dependencies:
   - "@keeb/hotelist"
 platforms: []

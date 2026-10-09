@@ -27,17 +27,21 @@ const DEFAULT_HOTEL_RATING = 5;
 
 const GlobalArgsSchema = z.object({});
 
-/** The hotel fields pick reads; matches @keeb/hotelist search output. */
+/**
+ * The hotel fields pick and generate use, from @keeb/hotelist search output.
+ * Other fields are dropped on parse.
+ */
 const HotelSchema = z.object({
   name: z.string(),
   url: z.string(),
   city: z.string(),
+  country: z.string().optional(),
   ai_rating: z.number().nullable(),
   price_per_night_usd: z.number().nullable(),
   km_from_center: z.number().nullable().optional(),
   pros: z.array(z.string()).optional(),
   cons: z.array(z.string()).optional(),
-}).passthrough();
+});
 
 type Hotel = z.infer<typeof HotelSchema>;
 type Flight = z.infer<typeof FlightOptionSchema>;
@@ -285,6 +289,15 @@ async function pick(
   },
 ): Promise<{ dataHandles: Array<{ name: string }> }> {
   const a = PickArgsSchema.parse(args);
+  context.logger.info(
+    "Picking from {flights} flights x {hotels} hotels for a ${budget} {priority} trip",
+    {
+      flights: a.flights.length,
+      hotels: a.hotels.length,
+      budget: a.budgetUsd,
+      priority: a.priority,
+    },
+  );
   const selection = pickBest(a);
   const handle = await context.writeResource(
     "selection",
@@ -556,6 +569,9 @@ async function generate(
   },
 ): Promise<{ dataHandles: Array<{ name: string }> }> {
   const trip = GenerateArgsSchema.parse(args);
+  context.logger.info("Rendering itinerary from selection-{name}", {
+    name: trip.name,
+  });
   const stored = await context.readResource(`selection-${trip.name}`);
   if (!stored) {
     throw new Error(

@@ -55,8 +55,8 @@ type Provider = keyof typeof PROVIDERS;
 
 const GlobalArgsSchema = z.object({
   provider: z.enum(Object.keys(PROVIDERS) as [Provider, ...Provider[]])
-    .default("serpapi").describe(
-      "Which Google Flights API the key belongs to: serpapi or searchapi (SearchApi.io).",
+    .default("searchapi").describe(
+      "Which Google Flights API the key belongs to: searchapi (SearchApi.io) or serpapi.",
     ),
   apiKey: z.string().min(1).meta({ sensitive: true }).describe(
     "API key for the chosen provider.",

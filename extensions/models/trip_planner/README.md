@@ -9,7 +9,7 @@ swamp workflow run @adam/plan-trip \
 
 ## How it works
 
-Each **behavior** is a swamp model, and its **methods** are what it can do.
+Each **behavior** is a swamp model type, and its **methods** are what it can do.
 The `@adam/plan-trip` workflow calls them in order and wires each result into the
 next step with CEL.
 
@@ -17,7 +17,7 @@ next step with CEL.
 | -------- | ----- | ------ | ------------ |
 | Anthropic | `trip-anthropic` (`@adam/trip-planner/anthropic`) | `extract` | Claude Haiku turns the request into structured requirements: origin and destination airports, dates, travelers, budget, priority (`budget` / `balanced` / `comfort`), cabin, interests. Nights, rooms, and a hotel price cap are computed in code. |
 | Hotel | `trip-hotels` (`@keeb/hotelist`) | `search_hotels` | Up to 10 rated hotels in the destination city under the price cap. |
-| Flight | `trip-flights` (`@adam/trip-planner/flights`) | `search` | Priced round-trip options from Google Flights via SerpApi or SearchApi.io (`provider` setting). |
+| Flight | `trip-flights` (`@adam/trip-planner/flights`) | `search` | Priced round-trip options from Google Flights via SearchApi.io or SerpApi. |
 | Itinerary | `trip-itinerary` (`@adam/trip-planner/itinerary`) | `pick` | Chooses the best flight + hotel. Deterministic, no LLM. |
 | | | `generate` | Renders a day-by-day Markdown itinerary from the pick. Deterministic, no LLM. |
 
@@ -67,15 +67,26 @@ swamp extension pull @adam/trip-planner
 
 swamp vault create local_encryption trip-planner
 swamp vault put trip-planner ANTHROPIC_API_KEY
-swamp vault put trip-planner FLIGHTS_API_KEY   # SerpApi or SearchApi.io key
+swamp vault put trip-planner FLIGHTS_API_KEY   # SearchApi.io (default) or SerpApi
+```
 
-swamp model create @adam/trip-planner/anthropic trip-anthropic \
-  --global-arg 'apiKey=${{ vault.get(trip-planner, ANTHROPIC_API_KEY) }}'
-swamp model create @keeb/hotelist trip-hotels
-swamp model create @adam/trip-planner/flights trip-flights \
-  --global-arg provider=searchapi \
-  --global-arg 'apiKey=${{ vault.get(trip-planner, FLIGHTS_API_KEY) }}'
-swamp model create @adam/trip-planner/itinerary trip-itinerary
+That's all. The workflow creates its four models (`trip-anthropic`,
+`trip-flights`, `trip-hotels`, `trip-itinerary`) on first run.
+
+### Workflow inputs
+
+| Input | Default | Meaning |
+| ----- | ------- | ------- |
+| `request` | (required) | The trip in plain English. Include origin and budget. |
+| `vault` | `trip-planner` | Vault holding the keys. |
+| `anthropic_key` | `ANTHROPIC_API_KEY` | Vault key for the Anthropic API key. |
+| `flights_key` | `FLIGHTS_API_KEY` | Vault key for the flight search API key. |
+| `flights_provider` | `searchapi` | `searchapi` (SearchApi.io) or `serpapi` (SerpApi). |
+
+```bash
+swamp workflow run @adam/plan-trip \
+  --input request="plan a trip to kyoto for 5 days in may, \$3000, from SFO, love temples and food" \
+  --input flights_provider=serpapi
 ```
 
 ## Reading the result
@@ -93,3 +104,7 @@ swamp data query 'modelName == "trip-itinerary" && name == "selection-latest"' -
   `pick` treats it as the total.
 - Hotel prices are hotelist.com's nightly USD estimates, not live rates.
 - Nothing is booked.
+
+## License
+
+Apache-2.0. See `LICENSE.txt`.

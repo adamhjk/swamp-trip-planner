@@ -16,6 +16,23 @@ inputs:
       description: >-
         The trip request, e.g. "plan a comfortable trip to japan, 10 days in
         april, $4000, from SFO"
+    vault:
+      type: string
+      description: Vault holding the API keys.
+      default: trip-planner
+    anthropic_key:
+      type: string
+      description: Vault key holding the Anthropic API key.
+      default: ANTHROPIC_API_KEY
+    flights_key:
+      type: string
+      description: Vault key holding the flight search API key.
+      default: FLIGHTS_API_KEY
+    flights_provider:
+      type: string
+      enum: [searchapi, serpapi]
+      description: Which Google Flights API flights_key belongs to (SearchApi.io or SerpApi).
+      default: searchapi
   required:
     - request
 jobs:
@@ -26,8 +43,11 @@ jobs:
         description: Claude Haiku extracts origin, destination, dates, budget, priority
         task:
           type: model_method
-          modelIdOrName: trip-anthropic
+          modelType: "@adam/trip-planner/anthropic"
+          modelName: trip-anthropic
           methodName: extract
+          globalArgs:
+            apiKey: ${{ vault.get(inputs.vault, inputs.anthropic_key) }}
           inputs:
             request: ${{ inputs.request }}
         dependsOn: []
@@ -64,8 +84,12 @@ jobs:
         description: Priced flight options for the route and dates
         task:
           type: model_method
-          modelIdOrName: trip-flights
+          modelType: "@adam/trip-planner/flights"
+          modelName: trip-flights
           methodName: search
+          globalArgs:
+            provider: ${{ inputs.flights_provider }}
+            apiKey: ${{ vault.get(inputs.vault, inputs.flights_key) }}
           inputs:
             departureIds: ${{ data.latest("trip-anthropic", "requirements-latest").attributes.originAirports }}
             arrivalIds: ${{ data.latest("trip-anthropic", "requirements-latest").attributes.destinationAirports }}
@@ -80,7 +104,8 @@ jobs:
         description: Rated hotels in the destination city under the nightly cap
         task:
           type: model_method
-          modelIdOrName: trip-hotels
+          modelType: "@keeb/hotelist"
+          modelName: trip-hotels
           methodName: search_hotels
           inputs:
             city: ${{ data.latest("trip-anthropic", "requirements-latest").attributes.destinationCity }}
@@ -92,7 +117,7 @@ jobs:
     weight: 0
 
   - name: plan
-    description: Pick the best-fit flight and hotel, then write the itinerary
+    description: Pick the best-fit flight and hotel, then render the itinerary
     dependsOn:
       - job: search
         condition:
@@ -102,7 +127,8 @@ jobs:
         description: Best flight + hotel within budget, scored by priority
         task:
           type: model_method
-          modelIdOrName: trip-itinerary
+          modelType: "@adam/trip-planner/itinerary"
+          modelName: trip-itinerary
           methodName: pick
           inputs:
             flights: ${{ data.latest("trip-flights", "flights-latest").attributes.options }}
@@ -134,7 +160,8 @@ jobs:
         description: Render the day-by-day itinerary from the pick (no LLM)
         task:
           type: model_method
-          modelIdOrName: trip-itinerary
+          modelType: "@adam/trip-planner/itinerary"
+          modelName: trip-itinerary
           methodName: generate
           inputs:
             destinationCity: ${{ data.latest("trip-anthropic", "requirements-latest").attributes.destinationCity }}
