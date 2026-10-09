@@ -21,7 +21,7 @@ const GlobalArgsSchema = z.object({
   apiKey: z.string().min(1).meta({ sensitive: true }).describe(
     "Anthropic API key.",
   ),
-  model: z.string().min(1).default("claude-haiku-4-5").describe(
+  model: z.string().min(1).default("claude-haiku-5-5").describe(
     "Claude model that extracts the requirements.",
   ),
   maxTokens: z.number().int().positive().default(2048).describe(
@@ -248,7 +248,7 @@ async function extract(
 /** Anthropic behavior: extract structured requirements with Claude. */
 export const model = {
   type: "@adam/trip-planner/anthropic",
-  version: "2026.10.08.1",
+  version: "2026.10.09.1",
   globalArguments: GlobalArgsSchema,
   resources: {
     requirements: {

@@ -1,6 +1,6 @@
 manifestVersion: 1
 name: "@adam/trip-planner"
-version: "2026.10.09.1"
+version: "2026.10.09.2"
 description: |
   Plan a trip from one plain-English sentence. Claude Haiku extracts the
   requirements, Google Flights (via SearchApi.io or SerpApi) and

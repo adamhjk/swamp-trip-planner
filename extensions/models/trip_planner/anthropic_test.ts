@@ -46,7 +46,7 @@ const fakeFetch = (body: unknown, status = 200) => () =>
 
 const claudeOpts = {
   apiKey: "k",
-  model: "claude-haiku-4-5",
+  model: "claude-haiku-5-5",
   maxTokens: 100,
   prompt: "hi",
   timeoutMs: 1000,
@@ -91,7 +91,7 @@ Deno.test("extract stores Claude's answer plus derived fields", async () => {
     {
       globalArgs: {
         apiKey: "k\n",
-        model: "claude-haiku-4-5",
+        model: "claude-haiku-5-5",
         maxTokens: 2048,
       },
       _fetch: (_url, init) => {
@@ -124,7 +124,7 @@ Deno.test("extract writes nothing when Claude returns non-JSON", async () => {
       model.methods.extract.execute(
         { request: "plan a trip", name: "latest" },
         {
-          globalArgs: { apiKey: "k", model: "claude-haiku-4-5", maxTokens: 2048 },
+          globalArgs: { apiKey: "k", model: "claude-haiku-5-5", maxTokens: 2048 },
           _fetch: fakeFetch({
             content: [{ type: "text", text: "not json" }],
             stop_reason: "end_turn",

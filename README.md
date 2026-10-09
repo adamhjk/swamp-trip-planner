@@ -50,13 +50,13 @@ request ─▶ Anthropic.extract ─▶ ┬─ Flight.search ─┐
 
 | Behavior | Type | Method | What it does |
 | -------- | ---- | ------ | ------------ |
-| Anthropic | `@adam/trip-planner/anthropic` | `extract` | Claude Haiku 4.5 turns the sentence into structured requirements: origin and destination airports, dates, travelers, budget, priority, interests. |
+| Anthropic | `@adam/trip-planner/anthropic` | `extract` | Claude Haiku 5.5 turns the sentence into structured requirements: origin and destination airports, dates, travelers, budget, priority, interests. |
 | Flight | `@adam/trip-planner/flights` | `search` | Priced round trips from Google Flights via [SearchApi.io](https://www.searchapi.io) or [SerpApi](https://serpapi.com). |
 | Hotel | `@keeb/hotelist` | `search_hotels` | Rated hotels with nightly prices from hotelist.com. |
 | Itinerary | `@adam/trip-planner/itinerary` | `pick` | Chooses the best flight + hotel that fits the budget, weighted by priority (`budget`, `balanced`, `comfort`). |
 | | | `generate` | Renders the Markdown itinerary from the pick. |
 
-**Only `extract` calls an LLM** (about $0.002 per run). Searching, picking,
+**Only `extract` calls an LLM** (about $0.0005 per run). Searching, picking,
 and rendering are plain code, so the same search results always produce the
 same itinerary, and `pick` can never go over budget. If the request leaves out
 the origin, budget, or usable dates, the workflow stops after `extract` and
